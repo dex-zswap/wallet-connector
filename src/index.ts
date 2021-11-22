@@ -67,7 +67,7 @@ export class DexMaskConnector extends AbstractConnector {
     if (__DEV__) {
       console.log("Handling 'networkChanged' event with payload", networkId)
     }
-    this.emitUpdate({ chainId: networkId, provider: window.dexEthereum })
+    this.emitUpdate({ chainId: networkId, provider: walletProvider })
   }
 
   public async activate(): Promise<ConnectorUpdate> {
@@ -102,10 +102,10 @@ export class DexMaskConnector extends AbstractConnector {
     // if unsuccessful, try enable
     if (!account) {
       // if enable is successful but doesn't return accounts, fall back to getAccount (not happy i have to do this...)
-      account = await window.dexEthereum.enable().then((sendReturn) => sendReturn && parseSendReturn(sendReturn)[0])
+      account = await walletProvider.enable().then((sendReturn) => sendReturn && parseSendReturn(sendReturn)[0])
     }
 
-    return { provider: window.dexEthereum, ...(account ? { account } : {}) }
+    return { provider: walletProvider, ...(account ? { account } : {}) }
   }
 
   public async getProvider(): Promise<any> {
@@ -185,21 +185,21 @@ export class DexMaskConnector extends AbstractConnector {
   }
 
   public deactivate() {
-    if (window.dexEthereum && window.dexEthereum.removeListener) {
-      window.dexEthereum.removeListener('chainChanged', this.handleChainChanged)
-      window.dexEthereum.removeListener('accountsChanged', this.handleAccountsChanged)
-      window.dexEthereum.removeListener('close', this.handleClose)
-      window.dexEthereum.removeListener('networkChanged', this.handleNetworkChanged)
+    if (walletProvider && walletProvider.removeListener) {
+      walletProvider.removeListener('chainChanged', this.handleChainChanged)
+      walletProvider.removeListener('accountsChanged', this.handleAccountsChanged)
+      walletProvider.removeListener('close', this.handleClose)
+      walletProvider.removeListener('networkChanged', this.handleNetworkChanged)
     }
   }
 
   public async isAuthorized(): Promise<boolean> {
-    if (!window.dexEthereum) {
+    if (!walletProvider) {
       return false
     }
 
     try {
-      return await (window.dexEthereum.send as Send)('eth_accounts').then((sendReturn) => {
+      return await (walletProvider.send as Send)('eth_accounts').then((sendReturn) => {
         if (parseSendReturn(sendReturn).length > 0) {
           return true
         } else {
